@@ -1,38 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Form view for company-specific categories -->
     <record id="product_template_form_view_inherit" model="ir.ui.view">
         <field name="name">product.template.form.inherit</field>
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_form_view"/>
         <field name="arch" type="xml">
-            <!-- Add a new page for company-specific categories -->
-            <notebook position="inside">
-                <page string="Company Categories" groups="base.group_multi_company">
-                    <field name="company_category_ids">
-                        <tree editable="bottom">
-                            <field name="company_id" options="{'no_create': True}"/>
-                            <field name="categ_id" options="{'no_create': True}"/>
-                        </tree>
-                    </field>
-                    <div class="alert alert-info" role="alert">
-                        <p>Set different categories for this product in each company. The category shown in the General Information tab will be based on your current company.</p>
-                    </div>
-                </page>
-            </notebook>
-        </field>
-    </record>
-    
-    <!-- Define the tree view for product.company.category -->
-    <record id="view_product_company_category_tree" model="ir.ui.view">
-        <field name="name">product.company.category.tree</field>
-        <field name="model">product.company.category</field>
-        <field name="arch" type="xml">
-            <tree>
-                <field name="product_tmpl_id"/>
-                <field name="company_id"/>
-                <field name="categ_id"/>
-            </tree>
+            <field name="categ_id" position="after">
+                <field name="display_categ_name" invisible="1"/>
+                <field name="original_categ_id" invisible="1"/>
+            </field>
         </field>
     </record>
 </odoo>
