@@ -1,34 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Modify product form view -->
-    <record id="product_template_form_view_inherit" model="ir.ui.view">
+    <!-- Form view for company-specific categories -->
+    <record id="view_product_template_form_inherit" model="ir.ui.view">
         <field name="name">product.template.form.inherit</field>
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_form_view"/>
         <field name="arch" type="xml">
-            <!-- Replace the standard category field with company-specific one -->
-            <xpath expr="//field[@name='categ_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            
-            <xpath expr="//field[@name='categ_id']" position="after">
-                <field name="display_categ_id" options="{'no_create': False}" string="Category"/>
-            </xpath>
-            
-            <!-- Add a new page for all company categories -->
-            <xpath expr="//notebook" position="inside">
+            <!-- Add a new page for company-specific categories -->
+            <notebook position="inside">
                 <page string="Company Categories" groups="base.group_multi_company">
-                    <field name="company_category_ids">
+                    <field name="company_categ_ids">
                         <tree editable="bottom">
                             <field name="company_id" options="{'no_create': True}"/>
-                            <field name="category_id" options="{'no_create': True}"/>
+                            <field name="categ_id" options="{'no_create': True}"/>
                         </tree>
                     </field>
                     <div class="alert alert-info" role="alert">
-                        <p>Set different categories for this product in each company. The category shown in the General Information tab will be specific to your current company.</p>
+                        <p>Set different categories for this product in each company.</p>
+                        <p>When you change the category in the General Information tab, it will only affect the category for your current company.</p>
                     </div>
                 </page>
-            </xpath>
+            </notebook>
         </field>
     </record>
 </odoo>

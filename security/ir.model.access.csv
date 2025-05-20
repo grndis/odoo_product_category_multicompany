@@ -1,4 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_product_category_company_user,product.category.company.user,model_product_category_company,base.group_user,1,0,0,0
-access_product_category_company_manager,product.category.company.manager,model_product_category_company,stock.group_stock_manager,1,1,1,1
+access_product_categ_by_company_user,product.categ.by.company.user,model_product_categ_by_company,base.group_user,1,0,0,0
+access_product_categ_by_company_manager,product.categ.by.company.manager,model_product_categ_by_company,stock.group_stock_manager,1,1,1,1
 
