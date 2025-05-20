@@ -11,7 +11,8 @@ Each company can have its own product category hierarchy.
     'author': 'Grandis',
     'website': 'https://grnd.is',
     'depends': ['product', 'stock'],
-    'data': [
+    'data': [       
+        'security/ir.model.access.csv',
         'views/product_views.xml',
     ],
     'installable': True,
