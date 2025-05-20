@@ -1,53 +1,95 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
+import json
 
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
     
-    # Fields for Company 1
-    company1_categ_id = fields.Many2one(
+    # Store the original category
+    original_categ_id = fields.Many2one(
         'product.category', 
-        string='Category (Company 1)'
+        string='Original Category',
+        default=lambda self: self.categ_id,
     )
     
-    # Fields for Company 2
-    company2_categ_id = fields.Many2one(
-        'product.category', 
-        string='Category (Company 2)'
+    # Company-specific category fields - use Text field instead of Serialized
+    company_specific_categ_json = fields.Text(
+        string='Company Categories JSON',
+        help='JSON field to store company-specific categories'
+    )
+    
+    @api.model
+    def create(self, vals):
+        res = super(ProductTemplate, self).create(vals)
+        if 'categ_id' in vals:
+            res.original_categ_id = vals['categ_id']
+            # Initialize the company categories dict
+            company_id = self.env.company.id
+            res.company_specific_categ_json = json.dumps({str(company_id): vals['categ_id']})
+        return res
+    
+    def write(self, vals):
+        # If category is being changed, store it for the current company
+        if 'categ_id' in vals:
+            for record in self:
+                company_id = str(self.env.company.id)
+                company_categories = {}
+                if record.company_specific_categ_json:
+                    try:
+                        company_categories = json.loads(record.company_specific_categ_json)
+                    except:
+                        company_categories = {}
+                
+                company_categories[company_id] = vals['categ_id']
+                vals['company_specific_categ_json'] = json.dumps(company_categories)
+        
+        return super(ProductTemplate, self).write(vals)
+    
+    def get_company_category(self, company_id=None):
+        """Get the category for a specific company"""
+        self.ensure_one()
+        if not company_id:
+            company_id = self.env.company.id
+        
+        company_id_str = str(company_id)
+        
+        if not self.company_specific_categ_json:
+            return self.categ_id.id
+        
+        try:
+            company_categories = json.loads(self.company_specific_categ_json)
+            if company_id_str in company_categories:
+                return company_categories[company_id_str]
+        except:
+            pass
+        
+        return self.categ_id.id
+    
+    def _compute_display_category(self):
+        """Compute the display category for the current company"""
+        for record in self:
+            categ_id = record.get_company_category()
+            category = self.env['product.category'].browse(categ_id)
+            record.display_categ_name = category.name if category else ""
+    
+    display_categ_name = fields.Char(
+        compute='_compute_display_category', 
+        string='Company Category'
     )
     
     # Override the default categ_id field to make it computed
-    categ_id = fields.Many2one(
-        'product.category', 
-        string='Category', 
-        compute='_compute_category',
-        inverse='_inverse_category',
-        store=True,
-        readonly=False,
-        required=True
-    )
-    
-    @api.depends('company1_categ_id', 'company2_categ_id')
+    @api.depends('company_specific_categ_json')
     def _compute_category(self):
-        company1 = self.env.ref('base.main_company')  # Replace with your Company 1 ID
-        company2 = self.env.ref('__export__.res_company_2_abcdef')  # Replace with your Company 2 ID
-        
-        for product in self:
-            if self.env.company == company1 and product.company1_categ_id:
-                product.categ_id = product.company1_categ_id
-            elif self.env.company == company2 and product.company2_categ_id:
-                product.categ_id = product.company2_categ_id
-            elif not product.categ_id:
-                # Fallback to default category
-                product.categ_id = self.env.ref('product.product_category_all', raise_if_not_found=False) or self.env['product.category'].search([], limit=1)
+        for record in self:
+            categ_id = record.get_company_category()
+            record.categ_id = categ_id
     
     def _inverse_category(self):
-        company1 = self.env.ref('base.main_company')  # Replace with your Company 1 ID
-        company2 = self.env.ref('__export__.res_company_2_abcdef')  # Replace with your Company 2 ID
-        
-        for product in self:
-            if self.env.company == company1:
-                product.company1_categ_id = product.categ_id
-            elif self.env.company == company2:
-                product.company2_categ_id = product.categ_id
+        for record in self:
+            company_id = str(self.env.company.id)
+            company_categories = {}
+            
+            if record.company_specific_categ_json:
+                try:
+                    company_categories = json
 
