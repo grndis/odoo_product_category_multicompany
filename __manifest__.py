@@ -12,8 +12,8 @@ Each company can have its own product category hierarchy.
     'website': 'https://grnd.is',
     'depends': ['product', 'stock'],
     'data': [
-        'security/security_rules.xml',
-        'views/product_category_views.xml',
+        'security/ir.model.access.csv',
+        'views/product_views.xml',
     ],
     'installable': True,
     'application': False,
