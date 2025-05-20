@@ -22,5 +22,18 @@
             </notebook>
         </field>
     </record>
+    
+    <!-- Define the tree view for product.company.category -->
+    <record id="view_product_company_category_tree" model="ir.ui.view">
+        <field name="name">product.company.category.tree</field>
+        <field name="model">product.company.category</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="product_tmpl_id"/>
+                <field name="company_id"/>
+                <field name="categ_id"/>
+            </tree>
+        </field>
+    </record>
 </odoo>
 

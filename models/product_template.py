@@ -39,7 +39,9 @@ class ProductTemplate(models.Model):
                 product.categ_id = company_category[0].categ_id
             else:
                 # Fallback to default category if no company-specific category is set
-                default_category = self.env['product.category'].search([], limit=1)
+                default_category = self.env.ref('product.product_category_all', raise_if_not_found=False)
+                if not default_category:
+                    default_category = self.env['product.category'].search([], limit=1)
                 product.categ_id = default_category
     
     def _inverse_category(self):
