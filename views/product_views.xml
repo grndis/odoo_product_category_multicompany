@@ -10,10 +10,10 @@
             <notebook position="inside">
                 <page string="Company Categories" groups="base.group_multi_company">
                     <field name="company_categ_ids">
-                        <tree editable="bottom">
+                        <list editable="bottom">
                             <field name="company_id" options="{'no_create': True}"/>
                             <field name="categ_id" options="{'no_create': True}"/>
-                        </tree>
+                        </list>
                     </field>
                     <div class="alert alert-info" role="alert">
                         <p>Set different categories for this product in each company.</p>
