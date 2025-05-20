@@ -4,55 +4,50 @@ from odoo import models, fields, api
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
     
-    # Store the original category
-    original_categ_id = fields.Many2one(
+    # Fields for Company 1
+    company1_categ_id = fields.Many2one(
         'product.category', 
-        string='Original Category',
-        default=lambda self: self.categ_id,
+        string='Category (Company 1)'
     )
     
-    # Company-specific category fields
-    company_specific_categ_ids = fields.Serialized(
-        string='Company Categories',
-        help='JSON field to store company-specific categories'
+    # Fields for Company 2
+    company2_categ_id = fields.Many2one(
+        'product.category', 
+        string='Category (Company 2)'
     )
     
-    @api.model
-    def create(self, vals):
-        res = super(ProductTemplate, self).create(vals)
-        if 'categ_id' in vals:
-            res.original_categ_id = vals['categ_id']
-            # Initialize the company categories dict
-            company_id = self.env.company.id
-            res.company_specific_categ_ids = {str(company_id): vals['categ_id']}
-        return res
+    # Override the default categ_id field to make it computed
+    categ_id = fields.Many2one(
+        'product.category', 
+        string='Category', 
+        compute='_compute_category',
+        inverse='_inverse_category',
+        store=True,
+        readonly=False,
+        required=True
+    )
     
-    def write(self, vals):
-        # If category is being changed, store it for the current company
-        if 'categ_id' in vals:
-            for record in self:
-                company_id = str(self.env.company.id)
-                company_categories = record.company_specific_categ_ids or {}
-                company_categories[company_id] = vals['categ_id']
-                vals['company_specific_categ_ids'] = company_categories
-        return super(ProductTemplate, self).write(vals)
+    @api.depends('company1_categ_id', 'company2_categ_id')
+    def _compute_category(self):
+        company1 = self.env.ref('base.main_company')  # Replace with your Company 1 ID
+        company2 = self.env.ref('__export__.res_company_2_abcdef')  # Replace with your Company 2 ID
+        
+        for product in self:
+            if self.env.company == company1 and product.company1_categ_id:
+                product.categ_id = product.company1_categ_id
+            elif self.env.company == company2 and product.company2_categ_id:
+                product.categ_id = product.company2_categ_id
+            elif not product.categ_id:
+                # Fallback to default category
+                product.categ_id = self.env.ref('product.product_category_all', raise_if_not_found=False) or self.env['product.category'].search([], limit=1)
     
-    @api.model
-    def _search_company_specific_category(self, operator, value):
-        # Enable searching by category across companies
-        if operator == '=':
-            return [('categ_id', operator, value)]
-        return []
-    
-    def _compute_display_category(self):
-        # This method could be used to show the company-specific category in views
-        for record in self:
-            company_id = str(self.env.company.id)
-            company_categories = record.company_specific_categ_ids or {}
-            if company_id in company_categories:
-                record.display_categ_name = self.env['product.category'].browse(company_categories[company_id]).name
-            else:
-                record.display_categ_name = record.categ_id.name
-    
-    display_categ_name = fields.Char(compute='_compute_display_category', string='Category Name')
+    def _inverse_category(self):
+        company1 = self.env.ref('base.main_company')  # Replace with your Company 1 ID
+        company2 = self.env.ref('__export__.res_company_2_abcdef')  # Replace with your Company 2 ID
+        
+        for product in self:
+            if self.env.company == company1:
+                product.company1_categ_id = product.categ_id
+            elif self.env.company == company2:
+                product.company2_categ_id = product.categ_id
 
