@@ -37,7 +37,7 @@ class ProductTemplate(models.Model):
                 if record.company_specific_categ_json:
                     try:
                         company_categories = json.loads(record.company_specific_categ_json)
-                    except:
+                    except Exception:
                         company_categories = {}
                 
                 company_categories[company_id] = vals['categ_id']
@@ -60,7 +60,7 @@ class ProductTemplate(models.Model):
             company_categories = json.loads(self.company_specific_categ_json)
             if company_id_str in company_categories:
                 return company_categories[company_id_str]
-        except:
+        except Exception:
             pass
         
         return self.categ_id.id
@@ -91,5 +91,10 @@ class ProductTemplate(models.Model):
             
             if record.company_specific_categ_json:
                 try:
-                    company_categories = json
+                    company_categories = json.loads(record.company_specific_categ_json)
+                except Exception:
+                    company_categories = {}
+            
+            company_categories[company_id] = record.categ_id.id
+            record.company_specific_categ_json = json.dumps(company_categories)
 
