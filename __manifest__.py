@@ -17,7 +17,7 @@ Each company can have its own product category hierarchy.
     ],
     'assets': {
         'web.assets_backend': [
-            'product_category_multicompany/static/src/js/product_category.js',
+            'odoo_product_category_multicompany/static/src/js/product_category.js',
         ],
     },
     'installable': True,
