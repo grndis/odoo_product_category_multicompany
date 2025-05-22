@@ -23,12 +23,5 @@
             </notebook>
         </field>
     </record>
-    
-    <!-- Add JavaScript assets -->
-    <template id="assets_backend" inherit_id="web.assets_backend">
-        <xpath expr="." position="inside">
-            <script type="text/javascript" src="/product_categ_company/static/src/js/product_category.js"></script>
-        </xpath>
-    </template>
 </odoo>
 

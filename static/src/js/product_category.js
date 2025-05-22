@@ -1,45 +1,40 @@
-odoo.define("product_categ_company.product_category", function (require) {
-  "use strict";
+/** @odoo-module **/
 
-  var FormController = require("web.FormController");
-  var core = require("web.core");
-  var _t = core._t;
+import { patch } from "@web/core/utils/patch";
+import { FormController } from "@web/views/form/form_controller";
+import { session } from "@web/session";
+import { browser } from "@web/core/browser/browser";
 
-  FormController.include({
-    saveRecord: function () {
-      var self = this;
-      var result = this._super.apply(this, arguments);
+patch(FormController.prototype, {
+  async saveRecord() {
+    const result = await this._super(...arguments);
 
-      // Check if we're in a product form and the category field has changed
-      if (
-        this.modelName === "product.template" &&
-        this.renderer.state.data.categ_id
-      ) {
-        var productId = this.renderer.state.data.id;
-        var categoryId = this.renderer.state.data.categ_id.data.id;
+    // Check if we're in a product form and the model is product.template
+    if (
+      this.model.root.resModel === "product.template" &&
+      this.model.root.data.id
+    ) {
+      const productId = this.model.root.data.id;
+      const categoryId = this.model.root.data.categ_id[0];
 
-        // Call the controller to update the company-specific category
-        this._rpc({
-          route: "/product_categ_company/update_category",
-          params: {
-            product_id: productId,
-            category_id: categoryId,
-          },
-        }).then(function (result) {
-          if (result.success) {
-            // Optionally show a notification
-            self.displayNotification({
-              title: _t("Category Updated"),
-              message: _t(
-                "The category has been updated for the current company.",
-              ),
-              type: "success",
-            });
-          }
-        });
+      // Call the controller to update the company-specific category
+      const response = await this.env.services.rpc({
+        route: "/product_categ_company/update_category",
+        params: {
+          product_id: productId,
+          category_id: categoryId,
+        },
+      });
+
+      if (response.success) {
+        // Optionally show a notification
+        this.env.services.notification.add(
+          this.env._t("The category has been updated for the current company."),
+          { type: "success" },
+        );
       }
+    }
 
-      return result;
-    },
-  });
+    return result;
+  },
 });
