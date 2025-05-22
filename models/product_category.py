@@ -41,74 +41,105 @@ class ProductTemplate(models.Model):
         string='Categories per Company'
     )
     
-    # Store the original category field
-    original_categ_id = fields.Many2one(
-        'product.category',
-        string='Original Category',
-        related='categ_id',
-        store=True,
-        readonly=True
-    )
-    
-    # Override the standard categ_id field
-    categ_id = fields.Many2one(
-        'product.category',
-        string='Category',
-        compute='_compute_company_category',
-        inverse='_set_company_category',
-        store=False,  # Don't store this computed field
-        required=True
-    )
-    
-    @api.depends('company_categ_ids', 'company_categ_ids.categ_id')
-    def _compute_company_category(self):
-        """Compute the category based on the current company"""
-        for product in self:
-            current_company = self.env.company
-            company_category = self.env['product.categ.by.company'].search([
-                ('product_tmpl_id', '=', product.id),
-                ('company_id', '=', current_company.id)
-            ], limit=1)
-            
-            if company_category:
-                product.categ_id = company_category.categ_id
-            else:
-                # Fallback to the original category if no company-specific one is found
-                product.categ_id = product.original_categ_id or self.env.ref('product.product_category_all', raise_if_not_found=False)
-    
-    def _set_company_category(self):
-        """When categ_id is set, update the company-specific category"""
-        for product in self:
-            current_company = self.env.company
-            company_category = self.env['product.categ.by.company'].search([
-                ('product_tmpl_id', '=', product.id),
-                ('company_id', '=', current_company.id)
-            ], limit=1)
-            
-            if company_category:
-                company_category.write({'categ_id': product.categ_id.id})
-            else:
-                self.env['product.categ.by.company'].create({
-                    'product_tmpl_id': product.id,
-                    'company_id': current_company.id,
-                    'categ_id': product.categ_id.id
-                })
+    # We'll keep the original categ_id field but add methods to handle company-specific behavior
     
     @api.model
     def create(self, vals):
         """When creating a product, initialize the company-specific category"""
         res = super(ProductTemplate, self).create(vals)
         
-        # Store the original category
-        original_categ_id = vals.get('categ_id')
-        
         # Create a company-specific category entry for the current company
-        if original_categ_id:
+        if 'categ_id' in vals and vals['categ_id']:
             self.env['product.categ.by.company'].create({
                 'product_tmpl_id': res.id,
                 'company_id': self.env.company.id,
-                'categ_id': original_categ_id
+                'categ_id': vals['categ_id'],
             })
             
         return res
+    
+    def write(self, vals):
+        """When updating a product, handle company-specific category"""
+        # If category is being changed, update the company-specific category
+        if 'categ_id' in vals:
+            for record in self:
+                company_id = self.env.company.id
+                company_category = self.env['product.categ.by.company'].search([
+                    ('product_tmpl_id', '=', record.id),
+                    ('company_id', '=', company_id)
+                ], limit=1)
+                
+                if company_category:
+                    company_category.write({'categ_id': vals['categ_id']})
+                else:
+                    self.env['product.categ.by.company'].create({
+                        'product_tmpl_id': record.id,
+                        'company_id': company_id,
+                        'categ_id': vals['categ_id']
+                    })
+        
+        return super(ProductTemplate, self).write(vals)
+    
+    @api.model
+    def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
+        """Override search to handle company-specific categories"""
+        new_args = []
+        for arg in args:
+            if isinstance(arg, (list, tuple)) and len(arg) == 3 and arg[0] == 'categ_id':
+                operator = arg[1]
+                value = arg[2]
+                
+                # Get products with matching company-specific category
+                company_id = self.env.company.id
+                category_records = self.env['product.categ.by.company'].search([
+                    ('company_id', '=', company_id),
+                    ('categ_id', operator, value)
+                ])
+                product_ids = category_records.mapped('product_tmpl_id').ids
+                
+                if product_ids:
+                    new_args.append(('id', 'in', product_ids))
+                else:
+                    # If no company-specific categories match, use the original condition
+                    new_args.append(arg)
+            else:
+                new_args.append(arg)
+        
+        return super(ProductTemplate, self)._search(
+            new_args, offset=offset, limit=limit, order=order, 
+            count=count, access_rights_uid=access_rights_uid
+        )
+    
+    # Add a method to get the company-specific category
+    def get_company_category(self):
+        """Get the category for the current company"""
+        self.ensure_one()
+        company_id = self.env.company.id
+        company_category = self.env['product.categ.by.company'].search([
+            ('product_tmpl_id', '=', self.id),
+            ('company_id', '=', company_id)
+        ], limit=1)
+        
+        if company_category:
+            return company_category.categ_id
+        return self.categ_id
+    
+    # Add a method to update the company-specific category
+    def update_company_category(self, category_id):
+        """Update the category for the current company"""
+        self.ensure_one()
+        company_id = self.env.company.id
+        company_category = self.env['product.categ.by.company'].search([
+            ('product_tmpl_id', '=', self.id),
+            ('company_id', '=', company_id)
+        ], limit=1)
+        
+        if company_category:
+            company_category.write({'categ_id': category_id})
+        else:
+            self.env['product.categ.by.company'].create({
+                'product_tmpl_id': self.id,
+                'company_id': company_id,
+                'categ_id': category_id
+            })
 

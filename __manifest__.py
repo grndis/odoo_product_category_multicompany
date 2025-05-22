@@ -15,6 +15,11 @@ Each company can have its own product category hierarchy.
         'security/ir.model.access.csv',
         'views/product_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'product_category_multicompany/static/src/js/product_category.js',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': False,
