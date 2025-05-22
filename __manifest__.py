@@ -1,28 +1,22 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Multi-Company Product Categories',
-    'version': '1.0',
-    'category': 'Inventory/Inventory',
-    'summary': 'Make product categories company-specific',
-    'description': """
+    "name": "Multi-Company Product Categories",
+    "version": "1.0",
+    "category": "Inventory/Inventory",
+    "summary": "Make product categories company-specific",
+    "description": """
 This module allows product categories to be company-specific instead of global.
 Each company can have its own product category hierarchy.
     """,
-    'author': 'Grandis',
-    'website': 'https://grnd.is',
-    'depends': ['product', 'stock', 'web'],
-    'data': [       
-        'security/ir.model.access.csv',
-        'views/product_views.xml',
+    "author": "Grandis",
+    "website": "https://grnd.is",
+    "depends": ["product", "stock"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/product_views.xml",
     ],
-    'assets': {
-        'web.assets_backend': [
-            'odoo_product_category_multicompany/static/src/js/product_category.js',
-        ],
-    },
-    'installable': True,
-    'application': False,
-    'auto_install': False,
-    'license': 'LGPL-3',
+    "installable": True,
+    "application": False,
+    "auto_install": False,
+    "license": "LGPL-3",
 }
-
