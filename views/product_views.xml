@@ -12,7 +12,7 @@
             </xpath>
             
             <xpath expr="//field[@name='categ_id']" position="after">
-                <field name="company_specific_categ_id" options="{'no_create': False}" string="Category"/>
+                <field name="company_specific_categ_id" options="{'no_create': False}" string="Category" required="1"/>
             </xpath>
             
             <!-- Add a new page for company-specific categories -->
@@ -33,4 +33,3 @@
         </field>
     </record>
 </odoo>
-

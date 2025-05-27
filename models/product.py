@@ -95,19 +95,63 @@ class ProductTemplate(models.Model):
                     }
                 )
 
+    # Override the standard write method to handle the case when categ_id is changed directly
+    def write(self, vals):
+        result = super(ProductTemplate, self).write(vals)
+
+        # If the standard category field was changed, update the company-specific category
+        if "categ_id" in vals:
+            for record in self:
+                company_id = self.env.company.id
+                company_category = self.env["product.categ.by.company"].search(
+                    [
+                        ("product_tmpl_id", "=", record.id),
+                        ("company_id", "=", company_id),
+                    ],
+                    limit=1,
+                )
+
+                if company_category:
+                    company_category.write({"categ_id": vals["categ_id"]})
+                else:
+                    self.env["product.categ.by.company"].create(
+                        {
+                            "product_tmpl_id": record.id,
+                            "company_id": company_id,
+                            "categ_id": vals["categ_id"],
+                        }
+                    )
+
+        return result
+
     @api.model_create_multi
     def create(self, vals_list):
+        # First create the products with the standard fields
         records = super(ProductTemplate, self).create(vals_list)
 
-        # Initialize company-specific categories for each new product
-        for record, vals in zip(records, vals_list):
-            if "categ_id" in vals and vals["categ_id"]:
-                self.env["product.categ.by.company"].create(
-                    {
-                        "product_tmpl_id": record.id,
-                        "company_id": self.env.company.id,
-                        "categ_id": vals["categ_id"],
-                    }
+        # Then create the company-specific categories
+        for record in records:
+            # Get the category from the record (not from vals_list to avoid issues)
+            category_id = record.categ_id.id
+            if category_id:
+                # Check if a company-specific category already exists
+                company_id = self.env.company.id
+                existing = self.env["product.categ.by.company"].search(
+                    [
+                        ("product_tmpl_id", "=", record.id),
+                        ("company_id", "=", company_id),
+                    ],
+                    limit=1,
                 )
+
+                # Only create if it doesn't exist yet
+                if not existing:
+                    self.env["product.categ.by.company"].create(
+                        {
+                            "product_tmpl_id": record.id,
+                            "company_id": company_id,
+                            "categ_id": category_id,
+                        }
+                    )
 
         return records
